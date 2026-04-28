@@ -82,8 +82,8 @@ if st.button("🚀 开始计算", type="primary", use_container_width=True):
 
     X = df[feature_cols].values.astype(float)
     groups = df[group_col].values
-    samples = df[sample_col].values
-    # 修改：将 short_names 转换为 NumPy 数组
+    # 修改：保留 samples 为 pandas Series（后续用 iloc 索引）
+    samples = df[sample_col]
     short_names = np.array([str(s).split()[-1] for s in samples])
 
     idx_target = np.where(groups == target_group)[0]
@@ -129,8 +129,8 @@ if st.button("🚀 开始计算", type="primary", use_container_width=True):
                 for j in idx_ref:
                     d = mahalanobis(X_pca_k[i], X_pca_k[j], inv_cov)
                     pair_rows.append({
-                        '目标样本': samples[i],
-                        '参考样本': samples[j],
+                        '目标样本': samples.iloc[i],  # 用 iloc 索引
+                        '参考样本': samples.iloc[j],  # 用 iloc 索引
                         '马氏距离': round(d, 4)
                     })
         pair_df = pd.DataFrame(pair_rows) if pair_rows else None
@@ -160,8 +160,8 @@ if st.button("🚀 开始计算", type="primary", use_container_width=True):
 
         # ---------- 结果表 ----------
         result_df = pd.DataFrame({
-            '样本名': samples[idx_target],
-            # 修改：直接用 idx_target（NumPy 数组）索引 short_names（NumPy 数组）
+            # 修改：用 iloc 索引 pandas Series
+            '样本名': samples.iloc[idx_target],
             '短名': short_names[idx_target],
             '马氏距离': [round(d, 4) for d in dists],
         })
