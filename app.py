@@ -112,8 +112,8 @@ if st.button("🚀 开始计算", type="primary", use_container_width=True):
         # ====== 1. Sum 归一化 ======
         X_sum_norm = X / X.sum(axis=1, keepdims=True)
 
-        # ====== 2. Pareto Scaling ======
-        std_vals = np.std(X_sum_norm, axis=0)
+        # ====== 2. Pareto Scaling - 修正版：使用ddof=1计算样本标准差 ======
+        std_vals = np.std(X_sum_norm, axis=0, ddof=1)  # 关键修正：使用ddof=1
         X_pareto = (X_sum_norm - np.mean(X_sum_norm, axis=0)) / np.sqrt(std_vals + 1e-10)
 
         # ====== 3. PCA ======
@@ -131,24 +131,16 @@ if st.button("🚀 开始计算", type="primary", use_container_width=True):
         scores_A = scores_df[scores_df['Group'] == target_group][pc_names].values
         scores_B = scores_df[scores_df['Group'] == ref_group][pc_names].values
 
-        # ====== 5. 马氏距离（Pooled Covariance）- 使用除以N的协方差 ======
+        # ====== 5. 马氏距离（Pooled Covariance）- 使用标准的np.cov ======
         mean_A = np.mean(scores_A, axis=0)
         mean_B = np.mean(scores_B, axis=0)
-        
-        # 使用除以N的协方差矩阵（最大似然估计）
-        def cov_mle(X):
-            """计算除以N的协方差矩阵（最大似然估计）"""
-            X_centered = X - np.mean(X, axis=0)
-            return (X_centered.T @ X_centered) / len(X)
-        
-        cov_A = cov_mle(scores_A)
-        cov_B = cov_mle(scores_B)
+        cov_A = np.cov(scores_A.T)  # np.cov默认使用ddof=1（除以N-1）
+        cov_B = np.cov(scores_B.T)  # np.cov默认使用ddof=1（除以N-1）
 
         n_A = len(scores_A)
         n_B = len(scores_B)
-        
-        # 使用样本量权重计算合并协方差矩阵
-        S_pooled = (n_A * cov_A + n_B * cov_B) / (n_A + n_B)
+        # 使用自由度 (n-1) 加权计算合并协方差矩阵
+        S_pooled = ((n_A - 1) * cov_A + (n_B - 1) * cov_B) / (n_A + n_B - 2)
 
         diff = mean_A - mean_B
         S_inv = inv(S_pooled)
