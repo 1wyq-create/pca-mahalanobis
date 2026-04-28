@@ -83,7 +83,8 @@ if st.button("🚀 开始计算", type="primary", use_container_width=True):
     X = df[feature_cols].values.astype(float)
     groups = df[group_col].values
     samples = df[sample_col].values
-    short_names = [str(s).split()[-1] for s in samples]
+    # 修改：将 short_names 转换为 NumPy 数组
+    short_names = np.array([str(s).split()[-1] for s in samples])
 
     idx_target = np.where(groups == target_group)[0]
     idx_ref = np.where(groups == ref_group)[0]
@@ -160,7 +161,8 @@ if st.button("🚀 开始计算", type="primary", use_container_width=True):
         # ---------- 结果表 ----------
         result_df = pd.DataFrame({
             '样本名': samples[idx_target],
-            '短名': short_names[np.array(idx_target)],
+            # 修改：直接用 idx_target（NumPy 数组）索引 short_names（NumPy 数组）
+            '短名': short_names[idx_target],
             '马氏距离': [round(d, 4) for d in dists],
         })
         result_df['是否达标'] = result_df['马氏距离'].apply(
@@ -256,4 +258,3 @@ if st.button("🚀 开始计算", type="primary", use_container_width=True):
                            img_buf, "PCA_plot.png", "image/png")
 
     st.success("🎉 计算完成！可以下载结果文件")
-
