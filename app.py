@@ -131,7 +131,7 @@ if st.button("🚀 开始计算", type="primary", use_container_width=True):
         scores_A = scores_df[scores_df['Group'] == target_group][pc_names].values
         scores_B = scores_df[scores_df['Group'] == ref_group][pc_names].values
 
-        # ====== 5. 马氏距离（Pooled Covariance） ======
+        # ====== 5. 马氏距离（Pooled Covariance）- 修正版 ======
         mean_A = np.mean(scores_A, axis=0)
         mean_B = np.mean(scores_B, axis=0)
         cov_A = np.cov(scores_A.T)
@@ -139,11 +139,12 @@ if st.button("🚀 开始计算", type="primary", use_container_width=True):
 
         n_A = len(scores_A)
         n_B = len(scores_B)
-        S_pooled = (n_A * cov_A + n_B * cov_B) / (n_A + n_B)   # 公式 (1)
+        # 使用自由度 (n-1) 加权计算合并协方差矩阵
+        S_pooled = ((n_A - 1) * cov_A + (n_B - 1) * cov_B) / (n_A + n_B - 2)
 
         diff = mean_A - mean_B
         S_inv = inv(S_pooled)
-        D_M = np.sqrt(np.dot(np.dot(diff, S_inv), diff.T))     # 公式 (2)
+        D_M = np.sqrt(np.dot(np.dot(diff, S_inv), diff.T))
 
         # ====== 6. 各样本到参考组均值的个体马氏距离 ======
         individual_dists = []
