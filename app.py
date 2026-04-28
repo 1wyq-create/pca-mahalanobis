@@ -131,16 +131,24 @@ if st.button("🚀 开始计算", type="primary", use_container_width=True):
         scores_A = scores_df[scores_df['Group'] == target_group][pc_names].values
         scores_B = scores_df[scores_df['Group'] == ref_group][pc_names].values
 
-        # ====== 5. 马氏距离（Pooled Covariance）- 修正版 ======
+        # ====== 5. 马氏距离（Pooled Covariance）- 使用除以N的协方差 ======
         mean_A = np.mean(scores_A, axis=0)
         mean_B = np.mean(scores_B, axis=0)
-        cov_A = np.cov(scores_A.T)
-        cov_B = np.cov(scores_B.T)
+        
+        # 使用除以N的协方差矩阵（最大似然估计）
+        def cov_mle(X):
+            """计算除以N的协方差矩阵（最大似然估计）"""
+            X_centered = X - np.mean(X, axis=0)
+            return (X_centered.T @ X_centered) / len(X)
+        
+        cov_A = cov_mle(scores_A)
+        cov_B = cov_mle(scores_B)
 
         n_A = len(scores_A)
         n_B = len(scores_B)
-        # 使用自由度 (n-1) 加权计算合并协方差矩阵
-        S_pooled = ((n_A - 1) * cov_A + (n_B - 1) * cov_B) / (n_A + n_B - 2)
+        
+        # 使用样本量权重计算合并协方差矩阵
+        S_pooled = (n_A * cov_A + n_B * cov_B) / (n_A + n_B)
 
         diff = mean_A - mean_B
         S_inv = inv(S_pooled)
